@@ -4,10 +4,15 @@ const User = require('./models/User');
 
 dotenv.config();
 
+if (process.env.NODE_ENV === 'production') {
+  console.error('Seed must not run in production');
+  process.exit(1);
+}
+
 const users = [
-  { name: 'Aman Sharma', email: 'aman@student.com', password: 'aman123', role: 'student' },
+  { name: 'Aman Sharma', email: 'aman@student.com', password: 'aman1234', role: 'student' },
   { name: 'Raj Patel', email: 'raj@owner.com', password: 'raj12345', role: 'owner' },
-  { name: 'Admin', email: 'admin@campus.com', password: 'admin123', role: 'admin' },
+  { name: 'Admin', email: 'admin@campus.com', password: 'admin1234', role: 'admin' },
 ];
 
 const seed = async () => {

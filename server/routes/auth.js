@@ -12,6 +12,10 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, message: 'All fields are required' });
     }
 
+    if (password.length < 8) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
+    }
+
     const allowedRoles = ['student', 'owner'];
     const userRole = allowedRoles.includes(role) ? role : 'student';
 
@@ -22,12 +26,14 @@ router.post('/register', async (req, res) => {
 
     const user = await User.create({ name, email, password, role: userRole });
 
-    req.session.userId = user._id;
-    req.session.role = user.role;
-
-    res.status(201).json({
-      success: true,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+    req.session.regenerate((err) => {
+      if (err) return res.status(500).json({ success: false, message: 'Server error' });
+      req.session.userId = user._id;
+      req.session.role = user.role;
+      res.status(201).json({
+        success: true,
+        user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      });
     });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error' });
@@ -53,12 +59,14 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid credentials' });
     }
 
-    req.session.userId = user._id;
-    req.session.role = user.role;
-
-    res.json({
-      success: true,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+    req.session.regenerate((err) => {
+      if (err) return res.status(500).json({ success: false, message: 'Server error' });
+      req.session.userId = user._id;
+      req.session.role = user.role;
+      res.json({
+        success: true,
+        user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      });
     });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error' });

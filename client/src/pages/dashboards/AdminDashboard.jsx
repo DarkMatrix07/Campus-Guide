@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { formatReviewDate as formatQueueDate } from '../../lib/formatDate';
 import { useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
@@ -19,17 +20,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '../../context/AuthContext';
 
-const formatQueueDate = (date) => {
-  if (!date) {
-    return '';
-  }
-
-  return new Intl.DateTimeFormat('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(date));
-};
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { formatReviewDate } from '../lib/formatDate';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   AlertCircle,
@@ -20,17 +21,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '../context/AuthContext';
 
-const formatReviewDate = (date) => {
-  if (!date) {
-    return '';
-  }
-
-  return new Intl.DateTimeFormat('en-IN', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(date));
-};
 
 const pluralize = (count, singular, plural) => `${count} ${count === 1 ? singular : plural}`;
 
@@ -394,7 +384,7 @@ const BusinessDetail = () => {
                           <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
                               <Star className="size-4 fill-amber-400 text-amber-400" />
-                              {review.rating}.0 rating
+                              {Number(review.rating).toFixed(1)} rating
                             </div>
                             <span className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
                               {formatReviewDate(review.createdAt)}
