@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Compass, Sparkles, Star } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import AuthShowcase from '@/components/AuthShowcase';
 import AppLogo from '@/components/AppLogo';
 import { Button } from '@/components/ui/button';
@@ -10,15 +10,9 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '../context/AuthContext';
 
 const showcaseHighlights = [
-  'Student-trusted reviews across food, stays, and everyday essentials.',
-  'Spotlight collections that help you decide faster between classes.',
-  'A calmer, cleaner way to discover what is worth your time near campus.',
-];
-
-const showcaseStats = [
-  { value: '500+', label: 'spots' },
-  { value: '10k+', label: 'reviews' },
-  { value: '50+', label: 'campuses' },
+  'Discover reliable local spots for food, stationery, and accommodation.',
+  'Read honest reviews from fellow students before you visit.',
+  'Find top-rated places in every category around your campus.',
 ];
 
 const Login = () => {
@@ -50,12 +44,11 @@ const Login = () => {
   return (
     <div className="min-h-[100dvh] bg-stone-100 lg:grid lg:grid-cols-[1.05fr_0.95fr]">
       <AuthShowcase
-        badge="Trusted picks"
-        title="Every campus favorite, organized with clarity."
-        description="Campus Guide gives students a premium, low-noise way to compare places, decide faster, and head out with confidence."
+        badge="Campus Guide"
+        title="Your go-to directory for local campus spots."
+        description="Browse nearby businesses, read student reviews, and find the best places for food, stationery, and more."
         highlights={showcaseHighlights}
-        stats={showcaseStats}
-        footer="Built for campus life: practical recommendations, useful filters, and a visual experience that feels calm instead of cluttered."
+        footer="A centralized review platform built by students, for students."
       />
 
       <section className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden px-4 py-8 sm:px-8">
@@ -76,19 +69,13 @@ const Login = () => {
 
           <Card className="rounded-[30px] border-white/80 bg-white/88 py-0 shadow-[0_30px_80px_-45px_rgba(15,23,42,0.4)] backdrop-blur-sm">
             <CardContent className="space-y-8 p-6 sm:p-8">
-              <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">
-                  <Sparkles className="size-3.5" />
-                  Clean student flow
-                </div>
-                <div className="space-y-2">
-                  <h1 className="text-3xl font-semibold tracking-[-0.05em] text-slate-950">
-                    Welcome back
-                  </h1>
-                  <p className="text-sm leading-7 text-slate-600">
-                    Sign in to continue exploring the most useful spots around your campus.
-                  </p>
-                </div>
+              <div className="space-y-2">
+                <h1 className="text-3xl font-semibold tracking-[-0.05em] text-slate-950">
+                  Welcome back
+                </h1>
+                <p className="text-sm leading-7 text-slate-600">
+                  Sign in to continue exploring campus spots.
+                </p>
               </div>
 
               {error && (
@@ -140,28 +127,6 @@ const Login = () => {
                 </Button>
               </form>
 
-              <div className="grid gap-3 rounded-[24px] border border-slate-200 bg-stone-50/80 p-4 sm:grid-cols-2">
-                <div className="rounded-2xl bg-white px-4 py-4 shadow-sm ring-1 ring-slate-100">
-                  <Compass className="size-4 text-sky-600" />
-                  <p className="mt-3 text-sm font-semibold text-slate-900">Explore faster</p>
-                  <p className="mt-1 text-xs leading-6 text-slate-500">
-                    Filter the best places without digging through clutter.
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-white px-4 py-4 shadow-sm ring-1 ring-slate-100">
-                  <Star className="size-4 text-amber-500" />
-                  <p className="mt-3 text-sm font-semibold text-slate-900">Trust the signal</p>
-                  <p className="mt-1 text-xs leading-6 text-slate-500">
-                    See the highest-rated picks surfaced with better context.
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-center text-xs leading-6 text-slate-500">
-                By signing in, you agree to our{' '}
-                <span className="font-medium text-slate-700">Terms</span> and{' '}
-                <span className="font-medium text-slate-700">Privacy Policy</span>.
-              </p>
             </CardContent>
           </Card>
         </div>

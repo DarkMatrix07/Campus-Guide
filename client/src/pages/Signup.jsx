@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, GraduationCap, ShieldCheck, Store } from 'lucide-react';
+import { ArrowRight, GraduationCap, Store } from 'lucide-react';
 import AuthShowcase from '@/components/AuthShowcase';
 import AppLogo from '@/components/AppLogo';
 import { Button } from '@/components/ui/button';
@@ -26,15 +26,9 @@ const roles = [
 ];
 
 const showcaseHighlights = [
-  'A cleaner onboarding flow for both students and local businesses.',
-  'Role-aware experiences with the same premium visual language.',
-  'Simple, focused forms that feel polished on mobile and desktop.',
-];
-
-const showcaseStats = [
-  { value: '2', label: 'roles' },
-  { value: '1', label: 'platform' },
-  { value: 'Always', label: 'potential' },
+  'Students can browse, filter, and review local campus businesses.',
+  'Shop owners can register and manage their business listings.',
+  'Admin moderation ensures only quality listings appear.',
 ];
 
 const Signup = () => {
@@ -66,12 +60,11 @@ const Signup = () => {
   return (
     <div className="min-h-[100dvh] bg-stone-100 lg:grid lg:grid-cols-[1.05fr_0.95fr]">
       <AuthShowcase
-        badge="Role-aware onboarding"
-        title="A premium sign-up flow for every campus contributor."
-        description="Choose your role, create your account, and step into a cleaner Campus Guide experience that feels consistent from the first screen onward."
+        badge="Get started"
+        title="Join the campus community that helps you decide."
+        description="Create your account as a student or shop owner and start exploring or listing local businesses."
         highlights={showcaseHighlights}
-        stats={showcaseStats}
-        footer="The redesign keeps the form practical while giving the product stronger hierarchy, calmer surfaces, and a more modern first impression."
+        footer="Campus Guide connects students with the best local spots around campus."
       />
 
       <section className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden px-4 py-8 sm:px-8">
@@ -92,19 +85,13 @@ const Signup = () => {
 
           <Card className="rounded-[30px] border-white/80 bg-white/90 py-0 shadow-[0_30px_80px_-45px_rgba(15,23,42,0.4)] backdrop-blur-sm">
             <CardContent className="space-y-8 p-6 sm:p-8">
-              <div className="space-y-4">
-                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">
-                  <ShieldCheck className="size-3.5" />
-                  Consistent onboarding
-                </div>
-                <div className="space-y-2">
-                  <h1 className="text-3xl font-semibold tracking-[-0.05em] text-slate-950">
-                    Create your account
-                  </h1>
-                  <p className="text-sm leading-7 text-slate-600">
-                    Choose how you use Campus Guide and start with a polished, low-friction setup.
-                  </p>
-                </div>
+              <div className="space-y-2">
+                <h1 className="text-3xl font-semibold tracking-[-0.05em] text-slate-950">
+                  Create your account
+                </h1>
+                <p className="text-sm leading-7 text-slate-600">
+                  Choose your role and get started with Campus Guide.
+                </p>
               </div>
 
               {error && (
@@ -191,7 +178,7 @@ const Signup = () => {
                     id="password"
                     type="password"
                     name="password"
-                    placeholder="Minimum 6 characters"
+                    placeholder="Minimum 8 characters"
                     value={form.password}
                     onChange={(event) => updateField('password', event.target.value)}
                     required
@@ -209,11 +196,6 @@ const Signup = () => {
                 </Button>
               </form>
 
-              <p className="text-center text-xs leading-6 text-slate-500">
-                By signing up, you agree to our{' '}
-                <span className="font-medium text-slate-700">Terms</span> and{' '}
-                <span className="font-medium text-slate-700">Privacy Policy</span>.
-              </p>
             </CardContent>
           </Card>
         </div>

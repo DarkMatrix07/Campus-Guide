@@ -43,17 +43,19 @@ const AuthShowcase = ({ badge, title, description, highlights, stats, footer }) 
       </div>
 
       <div className="relative z-10 space-y-5">
-        <div className="grid grid-cols-3 gap-3">
-          {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="rounded-2xl border border-white/70 bg-white/75 px-4 py-4 shadow-sm backdrop-blur"
-            >
-              <p className="text-2xl font-semibold tracking-tight text-slate-950">{stat.value}</p>
-              <p className="mt-1 text-xs uppercase tracking-[0.22em] text-slate-400">{stat.label}</p>
-            </div>
-          ))}
-        </div>
+        {stats && stats.length > 0 && (
+          <div className="grid grid-cols-3 gap-3">
+            {stats.map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-2xl border border-white/70 bg-white/75 px-4 py-4 shadow-sm backdrop-blur"
+              >
+                <p className="text-2xl font-semibold tracking-tight text-slate-950">{stat.value}</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.22em] text-slate-400">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        )}
         <p className="max-w-md text-sm leading-6 text-slate-500">{footer}</p>
       </div>
     </aside>
