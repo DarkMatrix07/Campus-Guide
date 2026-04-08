@@ -19,4 +19,11 @@ const isOwner = (req, res, next) => {
   next();
 };
 
-module.exports = { isAuth, isAdmin, isOwner };
+const isStudent = (req, res, next) => {
+  if (!req.session.userId || req.session.role !== 'student') {
+    return res.status(403).json({ success: false, message: 'Access denied' });
+  }
+  next();
+};
+
+module.exports = { isAuth, isAdmin, isOwner, isStudent };

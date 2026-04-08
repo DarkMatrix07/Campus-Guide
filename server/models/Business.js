@@ -17,6 +17,20 @@ const reviewSchema = new mongoose.Schema({
     trim: true,
     maxlength: 600,
   },
+  likedBy: {
+    type: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    }],
+    default: [],
+  },
+  dislikedBy: {
+    type: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    }],
+    default: [],
+  },
 }, { timestamps: true });
 
 const businessSchema = new mongoose.Schema({

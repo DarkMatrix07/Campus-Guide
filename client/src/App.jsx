@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Signup from './pages/Signup';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import BusinessDetail from './pages/BusinessDetail';
 
 const App = () => {
   return (
@@ -18,6 +19,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/businesses/:businessId"
+            element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <BusinessDetail />
               </ProtectedRoute>
             }
           />
