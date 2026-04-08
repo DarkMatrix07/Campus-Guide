@@ -1,130 +1,554 @@
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useAuth } from '../../context/AuthContext';
-import { MapPin, Plus, Clock, CheckCircle, MessageSquare, LogOut, Store } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  ImagePlus,
+  LoaderCircle,
+  MapPinned,
+  MessageSquareText,
+  Phone,
+  ShieldCheck,
+  Star,
+  Store,
+  Upload,
+  XCircle,
+} from 'lucide-react';
+import api from '@/api/axios';
+import DashboardShell from '@/components/DashboardShell';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '../../context/AuthContext';
 
-const fade = { hidden: { opacity: 0, y: 14 }, show: { opacity: 1, y: 0 } };
+const initialForm = {
+  name: '',
+  category: '',
+  location: '',
+  description: '',
+  contact: '',
+  image: null,
+};
 
-const steps = [
-  { icon: Store, label: 'Register Business', desc: 'Submit your details for review' },
-  { icon: Clock, label: 'Admin Review', desc: 'We verify and approve your listing' },
-  { icon: CheckCircle, label: 'Go Live', desc: 'Students can discover and review you' },
-];
+const formatStatusLabel = (status) => {
+  if (!status) {
+    return 'Pending review';
+  }
+
+  return status.charAt(0).toUpperCase() + status.slice(1).replace(/-/g, ' ');
+};
+
+const formatReviewDate = (date) => {
+  if (!date) {
+    return '';
+  }
+
+  return new Intl.DateTimeFormat('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(date));
+};
+
+const businessStatusContent = {
+  pending: {
+    title: 'Pending review',
+    description: 'Your listing is saved in pending status until the admin review is complete.',
+    highlight: 'Waiting for approval',
+    containerClassName: 'border-amber-100 bg-amber-50/80',
+    iconWrapperClassName: 'bg-white text-amber-600 ring-1 ring-amber-100',
+    icon: ShieldCheck,
+  },
+  approved: {
+    title: 'Approved and public',
+    description: 'Your business is now visible in the public business listings.',
+    highlight: 'Live in directory',
+    containerClassName: 'border-emerald-100 bg-emerald-50/80',
+    iconWrapperClassName: 'bg-white text-emerald-600 ring-1 ring-emerald-100',
+    icon: CheckCircle2,
+  },
+  rejected: {
+    title: 'Rejected for now',
+    description: 'This listing is not public right now. It stays hidden until a future resubmission flow is added.',
+    highlight: 'Needs review changes',
+    containerClassName: 'border-red-100 bg-red-50/80',
+    iconWrapperClassName: 'bg-white text-red-600 ring-1 ring-red-100',
+    icon: XCircle,
+  },
+};
 
 const OwnerDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [business, setBusiness] = useState(null);
+  const [loadingBusiness, setLoadingBusiness] = useState(true);
+  const [loadingError, setLoadingError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState(initialForm);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadBusiness = async () => {
+      try {
+        const response = await api.get('/businesses/mine');
+
+        if (!active) {
+          return;
+        }
+
+        setBusiness(response.data.business);
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+
+        if (error.response?.status === 404) {
+          setBusiness(null);
+          setLoadingError('');
+        } else {
+          setLoadingError(error.response?.data?.message || 'Unable to load your business right now.');
+        }
+      } finally {
+        if (active) {
+          setLoadingBusiness(false);
+        }
+      }
+    };
+
+    loadBusiness();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+  const updateField = (field, value) => {
+    setForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+    setFormError('');
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setFormError('');
+
+    if (!form.image) {
+      setFormError('Please upload a storefront image before submitting.');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('name', form.name);
+      formData.append('category', form.category);
+      formData.append('location', form.location);
+      formData.append('description', form.description);
+      formData.append('contact', form.contact);
+      formData.append('image', form.image);
+
+      const response = await api.post('/businesses', formData);
+      setBusiness(response.data.business);
+      setForm(initialForm);
+    } catch (error) {
+      setFormError(error.response?.data?.message || 'Business submission failed');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const shellTitle = business
+    ? 'Your business'
+    : 'Complete your business setup';
+
+  const shellDescription = business
+    ? 'Track your listing status, store rating, and public student reviews from one calm owner workspace.'
+    : 'Register your business once to unlock your owner dashboard on future logins.';
+
+  const statusContent = business
+    ? businessStatusContent[business.status] || businessStatusContent.pending
+    : businessStatusContent.pending;
+  const StatusIcon = statusContent.icon;
+  const reviewCount = business?.reviewCount || 0;
+  const averageRating = Number(business?.averageRating || 0);
+  const reviews = business?.reviews || [];
 
   return (
-    <div className="min-h-[100dvh] bg-slate-50">
-      {/* Navbar */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-blue-500 flex items-center justify-center">
-              <MapPin className="w-3.5 h-3.5 text-white" />
-            </div>
-            <span className="font-bold text-[15px] text-slate-900 tracking-tight">Campus Guide</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-500">{user?.name}</span>
-              <span className="text-[11px] font-semibold text-slate-900 bg-slate-100 border border-slate-200 rounded-full px-2 py-0.5">Owner</span>
-            </div>
-            <button
-              onClick={async () => { await logout(); navigate('/login'); }}
-              className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-md transition-colors"
-            >
-              <LogOut className="w-3.5 h-3.5" /> Logout
-            </button>
-          </div>
-        </div>
-      </nav>
-
-      {/* Content */}
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        <motion.div variants={fade} initial="hidden" animate="show" transition={{ duration: 0.4 }} className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight m-0">
-            Welcome, {user?.name?.split(' ')[0]}
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">Manage your business listing on Campus Guide</p>
-        </motion.div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Register CTA */}
-          <motion.div variants={fade} initial="hidden" animate="show" transition={{ duration: 0.4, delay: 0.08 }}
-            className="md:col-span-2 bg-slate-900 rounded-2xl p-7 relative overflow-hidden shadow-lg">
-            <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-blue-500/15 blur-3xl pointer-events-none" />
-            <div className="relative z-10">
-              <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center mb-4 backdrop-blur-sm border border-white/10">
-                <Store className="w-5 h-5 text-white" />
+    <DashboardShell
+      user={user}
+      role="owner"
+      roleLabel="Owner"
+      title={shellTitle}
+      description={shellDescription}
+      onLogout={handleLogout}
+    >
+      {loadingBusiness ? (
+        <Card className="rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_32px_90px_-60px_rgba(15,23,42,0.4)]">
+          <CardContent className="flex min-h-[360px] items-center justify-center p-8">
+            <div className="text-center">
+              <div className="mx-auto flex size-14 items-center justify-center rounded-[22px] bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+                <LoaderCircle className="size-6 animate-spin" />
               </div>
-              <h2 className="text-lg font-bold text-white tracking-tight m-0">Register Your Business</h2>
-              <p className="text-sm text-slate-400 mt-2 max-w-sm leading-relaxed">
-                List your shop on Campus Guide. Once approved by admin, students can discover and review your business.
+              <h2 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-slate-950">
+                Checking your business workspace
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600">
+                Loading your registration status and store details.
               </p>
-              <Button className="mt-5 bg-white text-slate-900 hover:bg-slate-100 border-none h-9 px-4 text-xs font-semibold gap-1.5">
-                <Plus className="w-3.5 h-3.5" /> Register now
-              </Button>
             </div>
-          </motion.div>
-
-          {/* Status */}
-          <motion.div variants={fade} initial="hidden" animate="show" transition={{ duration: 0.4, delay: 0.12 }}
-            className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col justify-between shadow-sm">
-            <div>
-              <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center mb-3">
-                <Clock className="w-4 h-4 text-amber-500" />
+          </CardContent>
+        </Card>
+      ) : loadingError ? (
+        <Card className="rounded-[32px] border-red-100 bg-white/90 py-0 shadow-[0_32px_90px_-60px_rgba(15,23,42,0.4)]">
+          <CardContent className="flex min-h-[320px] items-center justify-center p-8">
+            <div className="max-w-lg text-center">
+              <div className="mx-auto flex size-14 items-center justify-center rounded-[22px] bg-red-50 text-red-600 ring-1 ring-red-100">
+                <AlertCircle className="size-6" />
               </div>
-              <h2 className="text-sm font-semibold text-slate-900 m-0">Listing Status</h2>
-              <p className="text-xs text-slate-400 mt-1">No business registered yet</p>
+              <h2 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-slate-950">
+                Business workspace unavailable
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-slate-600">{loadingError}</p>
             </div>
-            <div className="flex items-center gap-2 mt-5">
-              <div className="w-2 h-2 rounded-full bg-slate-300" />
-              <span className="text-xs text-slate-400 font-medium">Not submitted</span>
-            </div>
-          </motion.div>
-
-          {/* How it works */}
-          <motion.div variants={fade} initial="hidden" animate="show" transition={{ duration: 0.4, delay: 0.16 }}
-            className="md:col-span-2 lg:col-span-3 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <h2 className="text-xs font-bold text-slate-900 mb-5 uppercase tracking-wider">How it works</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {steps.map((step, i) => {
-                const Icon = step.icon;
-                return (
-                  <div key={step.label} className="flex items-start gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0 shadow-sm">
-                      <Icon className="w-4 h-4 text-slate-400" />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-slate-300">0{i + 1}</span>
-                        <span className="text-sm font-semibold text-slate-900">{step.label}</span>
+          </CardContent>
+        </Card>
+      ) : business ? (
+        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <Card className="overflow-hidden rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_32px_90px_-60px_rgba(15,23,42,0.4)]">
+            <CardContent className="p-6 sm:p-8">
+              <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <Badge className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700">
+                      Submitted listing
+                    </Badge>
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h2 className="text-3xl font-semibold tracking-[-0.05em] text-slate-950">
+                          {business.name}
+                        </h2>
+                        <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">
+                          {formatStatusLabel(business.status)}
+                        </span>
                       </div>
-                      <p className="text-xs text-slate-400 mt-1 leading-relaxed">{step.desc}</p>
+                      <p className="text-sm leading-7 text-slate-600">
+                        Your setup is complete. This owner view now keeps your registration status, store rating, and
+                        public student reviews in one place.
+                      </p>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </motion.div>
 
-          {/* Reviews */}
-          <motion.div variants={fade} initial="hidden" animate="show" transition={{ duration: 0.4, delay: 0.2 }}
-            className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-            <div className="w-9 h-9 rounded-xl bg-violet-50 border border-violet-200 flex items-center justify-center mb-3">
-              <MessageSquare className="w-4 h-4 text-violet-500" />
-            </div>
-            <h2 className="text-sm font-semibold text-slate-900 m-0">Customer Reviews</h2>
-            <p className="text-xs text-slate-400 mt-1">Appears after approval</p>
-            <p className="text-3xl font-bold text-slate-900 mt-4">—</p>
-            <p className="text-xs text-slate-400 font-medium">reviews pending</p>
-          </motion.div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-[26px] border border-slate-200 bg-stone-50/80 p-5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Business name</p>
+                      <p className="mt-3 text-lg font-semibold text-slate-950">{business.name}</p>
+                    </div>
+                    <div className="rounded-[26px] border border-slate-200 bg-stone-50/80 p-5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Category</p>
+                      <p className="mt-3 text-lg font-semibold text-slate-950">{business.category}</p>
+                    </div>
+                    <div className="rounded-[26px] border border-slate-200 bg-stone-50/80 p-5">
+                      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                        <MapPinned className="size-4" />
+                        Location
+                      </div>
+                      <p className="mt-3 text-sm leading-7 text-slate-700">{business.location}</p>
+                    </div>
+                    <div className="rounded-[26px] border border-slate-200 bg-stone-50/80 p-5">
+                      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
+                        <Phone className="size-4" />
+                        Contact
+                      </div>
+                      <p className="mt-3 text-sm leading-7 text-slate-700">{business.contact}</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-[28px] border border-slate-200 bg-stone-50/80 p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Description</p>
+                    <p className="mt-3 text-sm leading-7 text-slate-700">{business.description}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-5">
+                  <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-stone-50/80">
+                    <div className="aspect-[4/3] bg-slate-100">
+                      <img
+                        src={business.imageUrl}
+                        alt={business.name}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-[28px] border border-slate-200 bg-slate-950 p-5 text-white shadow-[0_28px_80px_-50px_rgba(15,23,42,0.8)]">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Store rating</p>
+                        <p className="mt-3 text-3xl font-semibold tracking-tight">
+                          {averageRating.toFixed(1)}
+                        </p>
+                        <p className="mt-2 text-sm text-slate-300">
+                          {averageRating.toFixed(1)} average rating
+                        </p>
+                      </div>
+                      <div className="flex size-12 items-center justify-center rounded-2xl bg-white/10 text-amber-300">
+                        <Star className="size-5 fill-current" />
+                      </div>
+                    </div>
+                    <p className="mt-5 text-sm text-slate-300">
+                      {reviewCount} public {reviewCount === 1 ? 'review' : 'reviews'}
+                    </p>
+                  </div>
+
+                  <div className={`rounded-[28px] border p-5 ${statusContent.containerClassName}`}>
+                    <div className="flex items-start gap-3">
+                      <div className={`flex size-11 items-center justify-center rounded-2xl ${statusContent.iconWrapperClassName}`}>
+                        <StatusIcon className="size-5" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                          {statusContent.highlight}
+                        </p>
+                        <p className="mt-2 text-sm font-semibold text-slate-950">{statusContent.title}</p>
+                        <p className="mt-2 text-sm leading-7 text-slate-600">{statusContent.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_32px_90px_-60px_rgba(15,23,42,0.4)]">
+            <CardContent className="p-6 sm:p-8">
+              <div className="flex items-start gap-3">
+                <div className="flex size-12 items-center justify-center rounded-[22px] bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+                  <MessageSquareText className="size-5" />
+                </div>
+                <div>
+                  <Badge className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700">
+                    Public reviews
+                  </Badge>
+                  <h3 className="mt-4 text-2xl font-semibold tracking-[-0.04em] text-slate-950">
+                    Public reviews
+                  </h3>
+                  <p className="mt-3 text-sm leading-7 text-slate-600">
+                    Student names stay hidden here. Only the public review text and rating are shown in the owner
+                    workspace.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                {reviews.length > 0 ? (
+                  reviews.map((review) => (
+                    <div
+                      key={review.id}
+                      className="rounded-[26px] border border-slate-200 bg-stone-50/80 p-5"
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+                          <Star className="size-4 fill-amber-400 text-amber-400" />
+                          {review.rating}.0 rating
+                        </div>
+                        <span className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+                          {formatReviewDate(review.createdAt)}
+                        </span>
+                      </div>
+                      <p className="mt-4 text-sm leading-7 text-slate-700">{review.comment}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-[26px] border border-dashed border-slate-200 bg-stone-50/70 p-6">
+                    <p className="text-sm font-semibold text-slate-950">No public reviews yet</p>
+                    <p className="mt-2 text-sm leading-7 text-slate-600">
+                      Public reviews will appear here once students start sharing feedback. Reviewer names stay hidden.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
-    </div>
+      ) : (
+        <Card className="overflow-hidden rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_32px_90px_-60px_rgba(15,23,42,0.4)]">
+          <CardContent className="relative p-6 sm:p-8">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.14),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(191,219,254,0.14),transparent_32%)]" />
+
+            <div className="relative grid gap-8 xl:grid-cols-[0.95fr_1.05fr]">
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <Badge className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700">
+                    One-time setup
+                  </Badge>
+                  <div className="space-y-3">
+                    <h2 className="text-3xl font-semibold tracking-[-0.05em] text-slate-950">
+                      Register your business
+                    </h2>
+                    <p className="text-sm leading-7 text-slate-600">
+                      Complete this setup once. After submission, this owner dashboard will show your listing status,
+                      store rating, and public reviews on future logins.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                  <div className="rounded-[26px] border border-slate-200 bg-stone-50/80 p-5">
+                    <div className="flex size-11 items-center justify-center rounded-2xl bg-white text-amber-600 ring-1 ring-slate-100">
+                      <Store className="size-5" />
+                    </div>
+                    <p className="mt-4 text-sm font-semibold text-slate-950">Create your storefront</p>
+                    <p className="mt-2 text-sm leading-7 text-slate-600">
+                      Add the core business details students need before they discover your listing.
+                    </p>
+                  </div>
+                  <div className="rounded-[26px] border border-slate-200 bg-stone-50/80 p-5">
+                    <div className="flex size-11 items-center justify-center rounded-2xl bg-white text-sky-600 ring-1 ring-slate-100">
+                      <ImagePlus className="size-5" />
+                    </div>
+                    <p className="mt-4 text-sm font-semibold text-slate-950">Upload one strong image</p>
+                    <p className="mt-2 text-sm leading-7 text-slate-600">
+                      The first image becomes the main storefront photo shown back to you after setup.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <form onSubmit={handleSubmit} noValidate className="grid gap-5">
+                {formError && (
+                  <div className="rounded-[22px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {formError}
+                  </div>
+                )}
+
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="business-name" className="text-sm font-medium text-slate-700">
+                      Business name
+                    </Label>
+                    <Input
+                      id="business-name"
+                      value={form.name}
+                      onChange={(event) => updateField('name', event.target.value)}
+                      placeholder="North Gate Cafe"
+                      required
+                      className="h-12 rounded-2xl border-slate-200 bg-stone-50 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:border-amber-300 focus-visible:ring-amber-100"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="business-category" className="text-sm font-medium text-slate-700">
+                      Category
+                    </Label>
+                    <Input
+                      id="business-category"
+                      value={form.category}
+                      onChange={(event) => updateField('category', event.target.value)}
+                      placeholder="Cafe"
+                      required
+                      className="h-12 rounded-2xl border-slate-200 bg-stone-50 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:border-amber-300 focus-visible:ring-amber-100"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="business-location" className="text-sm font-medium text-slate-700">
+                      Location
+                    </Label>
+                    <Input
+                      id="business-location"
+                      value={form.location}
+                      onChange={(event) => updateField('location', event.target.value)}
+                      placeholder="North Gate, Block A"
+                      required
+                      className="h-12 rounded-2xl border-slate-200 bg-stone-50 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:border-amber-300 focus-visible:ring-amber-100"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="business-description" className="text-sm font-medium text-slate-700">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="business-description"
+                    value={form.description}
+                    onChange={(event) => updateField('description', event.target.value)}
+                    placeholder="Tell students what makes your business worth visiting."
+                    required
+                    className="min-h-32 rounded-[24px] border-slate-200 bg-stone-50 px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:border-amber-300 focus-visible:ring-amber-100"
+                  />
+                </div>
+
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="business-contact" className="text-sm font-medium text-slate-700">
+                      Contact
+                    </Label>
+                    <Input
+                      id="business-contact"
+                      value={form.contact}
+                      onChange={(event) => updateField('contact', event.target.value)}
+                      placeholder="+91 99999 00000"
+                      required
+                      className="h-12 rounded-2xl border-slate-200 bg-stone-50 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:border-amber-300 focus-visible:ring-amber-100"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="business-image" className="text-sm font-medium text-slate-700">
+                      Storefront image
+                    </Label>
+                    <input
+                      id="business-image"
+                      type="file"
+                      accept="image/*"
+                      onChange={(event) => updateField('image', event.target.files?.[0] || null)}
+                      required
+                      className="flex h-12 w-full rounded-2xl border border-slate-200 bg-stone-50 px-4 py-3 text-sm text-slate-900 file:mr-3 file:rounded-full file:border-0 file:bg-white file:px-3 file:py-1 file:text-sm file:font-medium file:text-slate-700 focus-visible:border-amber-300 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-amber-100"
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-[24px] border border-slate-200 bg-stone-50/80 p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-10 items-center justify-center rounded-2xl bg-white text-amber-600 ring-1 ring-slate-100">
+                      <Upload className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-950">After submission</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">
+                        Your business is saved as pending, and this workspace becomes your status and reviews view.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  className="h-12 rounded-2xl bg-slate-950 text-sm font-semibold text-white shadow-lg shadow-slate-950/15 hover:bg-slate-800"
+                >
+                  {submitting ? 'Submitting business...' : 'Submit business'}
+                </Button>
+              </form>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </DashboardShell>
   );
 };
 

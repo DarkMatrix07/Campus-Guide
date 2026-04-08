@@ -1,16 +1,24 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
-import { MapPin, ArrowRight, Star } from 'lucide-react';
+import { ArrowRight, Compass, Sparkles, Star } from 'lucide-react';
+import AuthShowcase from '@/components/AuthShowcase';
+import AppLogo from '@/components/AppLogo';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '../context/AuthContext';
 
-const spots = [
-  { emoji: '🍱', name: "Mama's Kitchen", category: 'Food', rating: '4.9' },
-  { emoji: '📚', name: 'Campus Stationery', category: 'Stationery', rating: '4.7' },
-  { emoji: '🏠', name: 'Green PG', category: 'PG & Stays', rating: '4.8' },
+const showcaseHighlights = [
+  'Student-trusted reviews across food, stays, and everyday essentials.',
+  'Spotlight collections that help you decide faster between classes.',
+  'A calmer, cleaner way to discover what is worth your time near campus.',
+];
+
+const showcaseStats = [
+  { value: '500+', label: 'spots' },
+  { value: '10k+', label: 'reviews' },
+  { value: '50+', label: 'campuses' },
 ];
 
 const Login = () => {
@@ -20,10 +28,11 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setError('');
     setLoading(true);
+
     try {
       await login(form);
       navigate('/dashboard');
@@ -34,141 +43,139 @@ const Login = () => {
     }
   };
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (event) => {
+    setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
+  };
 
   return (
-    <div className="min-h-[100dvh] flex flex-col lg:flex-row">
-      {/* ── Left branding panel ── */}
-      <div className="hidden lg:flex lg:w-[52%] bg-zinc-950 relative overflow-hidden flex-col justify-between p-12">
-        <div className="absolute inset-0 pointer-events-none"
-             style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px)', backgroundSize: '48px 48px' }} />
-        <div className="absolute -top-20 -left-20 w-[400px] h-[400px] rounded-full bg-blue-600 blur-[120px] opacity-10 pointer-events-none" />
-        <div className="absolute -bottom-16 -right-10 w-[320px] h-[320px] rounded-full bg-violet-600 blur-[110px] opacity-10 pointer-events-none" />
+    <div className="min-h-[100dvh] bg-stone-100 lg:grid lg:grid-cols-[1.05fr_0.95fr]">
+      <AuthShowcase
+        badge="Trusted picks"
+        title="Every campus favorite, organized with clarity."
+        description="Campus Guide gives students a premium, low-noise way to compare places, decide faster, and head out with confidence."
+        highlights={showcaseHighlights}
+        stats={showcaseStats}
+        footer="Built for campus life: practical recommendations, useful filters, and a visual experience that feels calm instead of cluttered."
+      />
 
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-          className="relative z-10 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center">
-            <MapPin className="w-4 h-4 text-white" />
+      <section className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden px-4 py-8 sm:px-8">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.12),transparent_40%),radial-gradient(circle_at_bottom_right,rgba(148,163,184,0.18),transparent_28%)]" />
+
+        <div className="relative z-10 w-full max-w-md space-y-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="lg:hidden">
+              <AppLogo compact />
+            </div>
+            <p className="ml-auto text-sm text-slate-600">
+              New here?{' '}
+              <Link to="/signup" className="font-semibold text-slate-950 transition hover:text-sky-700">
+                Create account
+              </Link>
+            </p>
           </div>
-          <span className="text-white font-semibold tracking-tight text-lg">Campus Guide</span>
-        </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-          className="relative z-10">
-          <h2 className="text-white text-[2.4rem] font-bold tracking-tight leading-[1.15] mb-3">
-            Discover the best<br />spots around<br />
-            <span className="text-blue-400">your campus.</span>
-          </h2>
-          <p className="text-zinc-400 text-sm leading-relaxed mb-8 max-w-[38ch]">
-            Student-powered reviews for food, stationery, PG, and everything in between.
-          </p>
-
-          <div className="space-y-3">
-            {spots.map(({ emoji, name, category, rating }, i) => (
-              <motion.div key={name}
-                initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.45 + i * 0.1, duration: 0.4 }}
-                className="flex items-center gap-3 bg-white/5 border border-white/10 p-3 rounded-xl backdrop-blur-sm">
-                <span className="text-2xl shrink-0">{emoji}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-zinc-100 text-sm font-semibold truncate">{name}</p>
-                  <p className="text-zinc-400 text-xs mt-0.5">{category}</p>
+          <Card className="rounded-[30px] border-white/80 bg-white/88 py-0 shadow-[0_30px_80px_-45px_rgba(15,23,42,0.4)] backdrop-blur-sm">
+            <CardContent className="space-y-8 p-6 sm:p-8">
+              <div className="space-y-4">
+                <div className="inline-flex items-center gap-2 rounded-full border border-sky-100 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">
+                  <Sparkles className="size-3.5" />
+                  Clean student flow
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                  <span className="text-zinc-300 text-xs font-semibold">{rating}</span>
+                <div className="space-y-2">
+                  <h1 className="text-3xl font-semibold tracking-[-0.05em] text-slate-950">
+                    Welcome back
+                  </h1>
+                  <p className="text-sm leading-7 text-slate-600">
+                    Sign in to continue exploring the most useful spots around your campus.
+                  </p>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.75 }}
-          className="relative z-10 flex items-center gap-9">
-          {[
-            ['500+', 'Businesses'],
-            ['10k+', 'Reviews'],
-            ['50+', 'Colleges']
-          ].map(([num, label]) => (
-            <div key={label}>
-              <p className="text-white font-bold text-xl tracking-tight leading-none">{num}</p>
-              <p className="text-zinc-500 text-[11px] mt-1.5">{label}</p>
-            </div>
-          ))}
-        </motion.div>
-      </div>
-
-      {/* ── Right form panel ── */}
-      <div className="flex-1 flex flex-col bg-zinc-50">
-        {/* Top bar */}
-        <div className="flex items-center justify-between px-8 py-5 border-b border-zinc-100">
-          <div className="flex items-center gap-2 lg:hidden">
-            <div className="w-7 h-7 rounded-lg bg-blue-500 flex items-center justify-center">
-              <MapPin className="w-3.5 h-3.5 text-white" />
-            </div>
-            <span className="font-semibold tracking-tight text-zinc-900 text-sm">Campus Guide</span>
-          </div>
-          <div className="ml-auto text-sm text-zinc-500 hidden lg:block" />
-          <div className="ml-auto text-sm text-zinc-500 lg:ml-0">
-            No account?{' '}
-            <Link to="/signup" className="text-zinc-900 font-semibold hover:underline">
-              Sign up
-            </Link>
-          </div>
-        </div>
-
-        {/* Form area */}
-        <div className="flex-1 flex items-center justify-center px-8 py-10">
-          <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-sm">
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Welcome back</h1>
-              <p className="text-sm text-zinc-500 mt-1">Sign in to your Campus Guide account</p>
-            </div>
-
-            {error && (
-              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-                className="mb-5 p-3 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg">
-                {error}
-              </motion.div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-zinc-700 font-medium text-sm">Email address</Label>
-                <Input
-                  id="email" type="email" name="email" placeholder="you@college.edu"
-                  value={form.email} onChange={handleChange} required
-                  className="h-10 bg-white border-zinc-200 text-sm"
-                />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="password" className="text-zinc-700 font-medium text-sm">Password</Label>
-                <Input
-                  id="password" type="password" name="password" placeholder="••••••••"
-                  value={form.password} onChange={handleChange} required
-                  className="h-10 bg-white border-zinc-200 text-sm"
-                />
-              </div>
-              <Button type="submit" disabled={loading}
-                className="w-full h-10 mt-2 bg-zinc-900 hover:bg-zinc-800 text-white font-medium text-sm gap-2 transition-colors">
-                {loading ? 'Signing in...' : <><span>Sign in</span><ArrowRight className="w-3.5 h-3.5" /></>}
-              </Button>
-            </form>
 
-            <div className="mt-8 pt-6 border-t border-zinc-200 text-center">
-              <p className="text-xs text-zinc-400">
-                By signing in you agree to our{' '}
-                <span className="text-zinc-600 underline cursor-pointer hover:text-zinc-900">Terms</span> and{' '}
-                <span className="text-zinc-600 underline cursor-pointer hover:text-zinc-900">Privacy Policy</span>
+              {error && (
+                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm font-medium text-slate-700">
+                    Email address
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    name="email"
+                    placeholder="you@college.edu"
+                    value={form.email}
+                    onChange={handleChange}
+                    required
+                    className="h-12 rounded-2xl border-slate-200 bg-stone-50 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:border-sky-400 focus-visible:ring-sky-200"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <Label htmlFor="password" className="text-sm font-medium text-slate-700">
+                      Password
+                    </Label>
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-slate-500 transition hover:text-slate-950"
+                    >
+                      Forgot it?
+                    </button>
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    value={form.password}
+                    onChange={handleChange}
+                    required
+                    className="h-12 rounded-2xl border-slate-200 bg-stone-50 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:border-sky-400 focus-visible:ring-sky-200"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="h-12 w-full rounded-2xl bg-slate-950 text-sm font-semibold text-white shadow-lg shadow-slate-950/15 transition hover:bg-slate-800"
+                >
+                  {loading ? 'Signing in...' : 'Sign in'}
+                  {!loading && <ArrowRight className="size-4" />}
+                </Button>
+              </form>
+
+              <div className="grid gap-3 rounded-[24px] border border-slate-200 bg-stone-50/80 p-4 sm:grid-cols-2">
+                <div className="rounded-2xl bg-white px-4 py-4 shadow-sm ring-1 ring-slate-100">
+                  <Compass className="size-4 text-sky-600" />
+                  <p className="mt-3 text-sm font-semibold text-slate-900">Explore faster</p>
+                  <p className="mt-1 text-xs leading-6 text-slate-500">
+                    Filter the best places without digging through clutter.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white px-4 py-4 shadow-sm ring-1 ring-slate-100">
+                  <Star className="size-4 text-amber-500" />
+                  <p className="mt-3 text-sm font-semibold text-slate-900">Trust the signal</p>
+                  <p className="mt-1 text-xs leading-6 text-slate-500">
+                    See the highest-rated picks surfaced with better context.
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-center text-xs leading-6 text-slate-500">
+                By signing in, you agree to our{' '}
+                <span className="font-medium text-slate-700">Terms</span> and{' '}
+                <span className="font-medium text-slate-700">Privacy Policy</span>.
               </p>
-            </div>
-          </motion.div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      </section>
     </div>
   );
 };
 
 export default Login;
-
