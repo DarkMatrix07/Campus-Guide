@@ -60,13 +60,19 @@ const uploadBusinessImage = (req, res, next) => {
   });
 };
 
+const resolveUploadPath = (relativePath) => {
+  if (!relativePath) return null;
+  if (path.isAbsolute(relativePath)) return relativePath;
+  return path.join(uploadRoot, '..', relativePath);
+};
+
 const removeFileIfPresent = async (filePath) => {
   if (!filePath) {
     return;
   }
 
   try {
-    await fsPromises.rm(filePath, { force: true });
+    await fsPromises.rm(resolveUploadPath(filePath), { force: true });
   } catch (_error) {
     // Best-effort cleanup
   }
@@ -479,7 +485,7 @@ router.post('/', isAuth, isOwner, uploadBusinessImage, async (req, res) => {
       description,
       contact,
       imageUrl: `/uploads/businesses/${req.file.filename}`,
-      imagePath: req.file.path,
+      imagePath: `uploads/businesses/${req.file.filename}`,
       status: 'pending',
     });
 
@@ -526,7 +532,7 @@ router.put('/mine', isAuth, isOwner, uploadBusinessImage, async (req, res) => {
     if (req.file) {
       await removeFileIfPresent(business.imagePath);
       business.imageUrl = `/uploads/businesses/${req.file.filename}`;
-      business.imagePath = req.file.path;
+      business.imagePath = `uploads/businesses/${req.file.filename}`;
     }
 
     business.name = name;
@@ -540,6 +546,23 @@ router.put('/mine', isAuth, isOwner, uploadBusinessImage, async (req, res) => {
     return res.json({ success: true, business: serializeBusinessForOwner(business) });
   } catch (_error) {
     await removeFileIfPresent(req.file?.path);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.delete('/mine', isAuth, isOwner, async (req, res) => {
+  try {
+    const business = await Business.findOne({ owner: req.session.userId });
+
+    if (!business) {
+      return res.status(404).json({ success: false, message: 'Business not found' });
+    }
+
+    await removeFileIfPresent(business.imagePath);
+    await Business.findByIdAndDelete(business._id);
+
+    return res.json({ success: true });
+  } catch (_error) {
     return res.status(500).json({ success: false, message: 'Server error' });
   }
 });

@@ -8,6 +8,7 @@ import {
   EyeOff,
   Eye,
   LoaderCircle,
+  Search,
   Mail,
   MapPinned,
   MessageSquareText,
@@ -362,6 +363,7 @@ const BusinessesTab = () => {
   const [error, setError] = useState('');
   const [actionId, setActionId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -412,6 +414,16 @@ const BusinessesTab = () => {
           <div className="mb-4 rounded-[22px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         )}
 
+        <div className="relative mb-4">
+          <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or category..."
+            className="h-11 rounded-2xl border-slate-200 bg-stone-50 pl-11 pr-4 text-sm focus-visible:border-violet-300 focus-visible:ring-violet-100"
+          />
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-12">
             <LoaderCircle className="size-6 animate-spin text-violet-600" />
@@ -420,7 +432,10 @@ const BusinessesTab = () => {
           <p className="text-center text-sm text-slate-500 py-8">No businesses registered yet.</p>
         ) : (
           <div className="grid gap-3">
-            {businesses.map((business) => (
+            {businesses.filter((b) => {
+              const q = search.trim().toLowerCase();
+              return !q || b.name?.toLowerCase().includes(q) || b.category?.toLowerCase().includes(q);
+            }).map((business) => (
               <div
                 key={business.id}
                 className="flex flex-col gap-4 rounded-[24px] border border-slate-200 bg-stone-50/80 p-5 sm:flex-row sm:items-center sm:justify-between"
@@ -495,7 +510,7 @@ const BusinessesTab = () => {
   );
 };
 
-// ── Users Tab ─────────────────────────────────────────────────────────────────
+// ── Users Tab ───────────────────────────────────────────────────────────────── ─────────────────────────────────────────────────────────────────
 
 const UsersTab = ({ currentUserId }) => {
   const [users, setUsers] = useState([]);
@@ -503,6 +518,7 @@ const UsersTab = ({ currentUserId }) => {
   const [error, setError] = useState('');
   const [actionId, setActionId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -551,6 +567,16 @@ const UsersTab = ({ currentUserId }) => {
           <div className="mb-4 rounded-[22px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         )}
 
+        <div className="relative mb-4">
+          <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name or email..."
+            className="h-11 rounded-2xl border-slate-200 bg-stone-50 pl-11 pr-4 text-sm focus-visible:border-violet-300 focus-visible:ring-violet-100"
+          />
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-12">
             <LoaderCircle className="size-6 animate-spin text-violet-600" />
@@ -559,7 +585,10 @@ const UsersTab = ({ currentUserId }) => {
           <p className="text-center text-sm text-slate-500 py-8">No users found.</p>
         ) : (
           <div className="grid gap-3">
-            {users.map((user) => {
+            {users.filter((u) => {
+              const q = search.trim().toLowerCase();
+              return !q || u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q);
+            }).map((user) => {
               const isSelf = String(user.id) === String(currentUserId);
               return (
                 <div
@@ -643,6 +672,7 @@ const ReviewsTab = () => {
   const [error, setError] = useState('');
   const [actionId, setActionId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -701,6 +731,16 @@ const ReviewsTab = () => {
           <div className="mb-4 rounded-[22px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         )}
 
+        <div className="relative mb-4">
+          <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by business or review text..."
+            className="h-11 rounded-2xl border-slate-200 bg-stone-50 pl-11 pr-4 text-sm focus-visible:border-violet-300 focus-visible:ring-violet-100"
+          />
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-12">
             <LoaderCircle className="size-6 animate-spin text-violet-600" />
@@ -709,7 +749,10 @@ const ReviewsTab = () => {
           <p className="text-center text-sm text-slate-500 py-8">No reviews yet.</p>
         ) : (
           <div className="grid gap-3">
-            {reviews.map((review) => {
+            {reviews.filter((r) => {
+              const q = search.trim().toLowerCase();
+              return !q || r.businessName?.toLowerCase().includes(q) || r.comment?.toLowerCase().includes(q);
+            }).map((review) => {
               const key = `${review.businessId}:${review.reviewId}`;
               const isActing = actionId === key;
               return (

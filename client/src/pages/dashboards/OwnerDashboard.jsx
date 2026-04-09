@@ -87,6 +87,8 @@ const OwnerDashboard = () => {
   const [editForm, setEditForm] = useState(initialForm);
   const [editError, setEditError] = useState('');
   const [editSubmitting, setEditSubmitting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     api.get('/categories').then((res) => setCategories(res.data.categories || [])).catch(() => {});
@@ -221,6 +223,18 @@ const OwnerDashboard = () => {
       setEditError(error.response?.data?.message || 'Failed to update business.');
     } finally {
       setEditSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await api.delete('/businesses/mine');
+      setBusiness(null);
+      setConfirmDelete(false);
+    } catch (error) {
+      setConfirmDelete(false);
+      setDeleting(false);
     }
   };
 
@@ -415,6 +429,35 @@ const OwnerDashboard = () => {
                       >
                         Edit listing
                       </Button>
+                      {confirmDelete ? (
+                        <>
+                          <Button
+                            type="button"
+                            disabled={deleting}
+                            onClick={handleDelete}
+                            className="h-8 rounded-xl bg-red-600 px-3 text-xs font-semibold text-white hover:bg-red-700"
+                          >
+                            {deleting ? <LoaderCircle className="size-3.5 animate-spin" /> : 'Confirm delete'}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setConfirmDelete(false)}
+                            className="h-8 rounded-xl border-slate-200 px-3 text-xs font-semibold text-slate-600"
+                          >
+                            Cancel
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setConfirmDelete(true)}
+                          className="h-8 rounded-xl border-red-200 px-3 text-xs font-semibold text-red-700 hover:bg-red-50"
+                        >
+                          Delete listing
+                        </Button>
+                      )}
                     </div>
                     <div className="space-y-3">
                       <div className="flex flex-wrap items-center gap-3">
