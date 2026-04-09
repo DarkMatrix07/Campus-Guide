@@ -238,16 +238,29 @@ const serializeBusinessForAdmin = (business) => ({
 });
 
 const serializeBusinessForPublic = (business, viewerId) => {
-  const reviews = asArray(business?.reviews).filter((review) => !review?.hidden);
-  const matchingReview = viewerId == null
+  const allReviews = asArray(business?.reviews);
+  const visibleReviews = allReviews.filter((review) => !review?.hidden);
+
+  // Check all reviews (including hidden) so a student with a hidden review
+  // sees "already reviewed" rather than a form that will get blocked by the API.
+  const viewerReview = viewerId == null
     ? null
-    : reviews.find((review) => idsEqual(review?.reviewer, viewerId));
+    : allReviews.find((review) => idsEqual(review?.reviewer, viewerId));
+
+  const validRatings = visibleReviews
+    .map((review) => Number(review?.rating))
+    .filter((rating) => Number.isFinite(rating) && rating > 0);
+  const averageRating = validRatings.length === 0
+    ? 0
+    : Number((validRatings.reduce((sum, r) => sum + r, 0) / validRatings.length).toFixed(1));
 
   return {
     ...buildSerializedBusinessBase(business),
-    viewerHasReviewed: Boolean(matchingReview),
-    viewerReviewId: matchingReview ? getEntityId(matchingReview) : null,
-    reviews: reviews.map((review) => serializeReview(review, viewerId)),
+    reviewCount: visibleReviews.length,
+    averageRating,
+    viewerHasReviewed: Boolean(viewerReview),
+    viewerReviewId: viewerReview ? getEntityId(viewerReview) : null,
+    reviews: visibleReviews.map((review) => serializeReview(review, viewerId)),
   };
 };
 
@@ -696,6 +709,7 @@ router.patch('/:id/reviews/:reviewId/hide', isAuth, isAdmin, async (req, res) =>
     }
 
     review.hidden = !review.hidden;
+    business.markModified('reviews');
     await business.save();
 
     return res.json({ success: true, hidden: review.hidden });
