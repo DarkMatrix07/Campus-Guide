@@ -465,7 +465,7 @@ router.post('/', isAuth, isOwner, uploadBusinessImage, async (req, res) => {
       location,
       description,
       contact,
-      imageUrl: `${process.env.SERVER_BASE_URL}/uploads/businesses/${req.file.filename}`,
+      imageUrl: `/uploads/businesses/${req.file.filename}`,
       imagePath: req.file.path,
       status: 'pending',
     });
@@ -512,7 +512,7 @@ router.put('/mine', isAuth, isOwner, uploadBusinessImage, async (req, res) => {
 
     if (req.file) {
       await removeFileIfPresent(business.imagePath);
-      business.imageUrl = `${process.env.SERVER_BASE_URL}/uploads/businesses/${req.file.filename}`;
+      business.imageUrl = `/uploads/businesses/${req.file.filename}`;
       business.imagePath = req.file.path;
     }
 

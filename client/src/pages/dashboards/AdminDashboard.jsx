@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import api from '@/api/axios';
 import DashboardShell from '@/components/DashboardShell';
-import { Badge } from '@/components/ui/badge';
+import ProfileEditCard from '@/components/ProfileEditCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -111,10 +111,7 @@ const ApprovalsTab = () => {
         <CardContent className="p-6 sm:p-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <Badge className="rounded-full bg-violet-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-700">
-                Review queue
-              </Badge>
-              <h2 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-slate-950">
+              <h2 className="text-3xl font-semibold tracking-[-0.05em] text-slate-950">
                 Pending business approvals
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
@@ -283,10 +280,7 @@ const CategoriesTab = () => {
     <Card className="rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_32px_90px_-60px_rgba(15,23,42,0.4)]">
       <CardContent className="p-6 sm:p-8">
         <div className="mb-6">
-          <Badge className="rounded-full bg-violet-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-700">
-            Directory categories
-          </Badge>
-          <h2 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-slate-950">Manage categories</h2>
+          <h2 className="text-3xl font-semibold tracking-[-0.05em] text-slate-950">Manage categories</h2>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
             Categories appear in the owner registration dropdown and student directory filters.
           </p>
@@ -408,10 +402,7 @@ const BusinessesTab = () => {
     <Card className="rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_32px_90px_-60px_rgba(15,23,42,0.4)]">
       <CardContent className="p-6 sm:p-8">
         <div className="mb-6">
-          <Badge className="rounded-full bg-violet-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-700">
-            All listings
-          </Badge>
-          <h2 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-slate-950">Manage businesses</h2>
+          <h2 className="text-3xl font-semibold tracking-[-0.05em] text-slate-950">Manage businesses</h2>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
             Hide businesses from the public directory or permanently delete them.
           </p>
@@ -550,10 +541,7 @@ const UsersTab = ({ currentUserId }) => {
     <Card className="rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_32px_90px_-60px_rgba(15,23,42,0.4)]">
       <CardContent className="p-6 sm:p-8">
         <div className="mb-6">
-          <Badge className="rounded-full bg-violet-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-700">
-            User accounts
-          </Badge>
-          <h2 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-slate-950">Manage users</h2>
+          <h2 className="text-3xl font-semibold tracking-[-0.05em] text-slate-950">Manage users</h2>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
             Change user roles or remove accounts. You cannot modify your own account.
           </p>
@@ -703,10 +691,7 @@ const ReviewsTab = () => {
     <Card className="rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_32px_90px_-60px_rgba(15,23,42,0.4)]">
       <CardContent className="p-6 sm:p-8">
         <div className="mb-6">
-          <Badge className="rounded-full bg-violet-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-violet-700">
-            Student reviews
-          </Badge>
-          <h2 className="mt-4 text-3xl font-semibold tracking-[-0.05em] text-slate-950">Manage reviews</h2>
+          <h2 className="text-3xl font-semibold tracking-[-0.05em] text-slate-950">Manage reviews</h2>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
             Hide reviews from the public or permanently delete them.
           </p>
@@ -806,6 +791,7 @@ const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('approvals');
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -817,11 +803,15 @@ const AdminDashboard = () => {
       user={user}
       role="admin"
       roleLabel="Admin"
-      title="Admin workspace"
-      description="Manage approvals, categories, businesses, users, and reviews from one place."
+      title="Admin panel"
+      description="Review submissions, manage listings, and keep the platform running."
       onLogout={handleLogout}
+      onEditProfile={() => setShowProfileEdit((v) => !v)}
     >
       <div className="space-y-6">
+        {showProfileEdit && (
+          <ProfileEditCard onClose={() => setShowProfileEdit(false)} />
+        )}
         <div className="flex gap-1 overflow-x-auto rounded-[28px] border border-white/80 bg-white/90 p-1.5 shadow-[0_8px_32px_-12px_rgba(15,23,42,0.15)]">
           {TABS.map((tab) => (
             <button
