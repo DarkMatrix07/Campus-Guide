@@ -12,11 +12,11 @@ import {
 } from 'lucide-react';
 import api from '@/api/axios';
 import DashboardShell from '@/components/DashboardShell';
+import ProfileEditCard from '@/components/ProfileEditCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useAuth } from '../../context/AuthContext';
 
 const ratingFilters = [
@@ -29,6 +29,7 @@ const ratingFilters = [
 const StudentDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
   const [businesses, setBusinesses] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -107,6 +108,7 @@ const StudentDashboard = () => {
       title="Campus directory"
       description="Search and browse local businesses near your campus."
       onLogout={handleLogout}
+      onEditProfile={() => setShowProfileEdit((v) => !v)}
       headerAction={(
         <Button
           type="button"
@@ -152,74 +154,57 @@ const StudentDashboard = () => {
       ) : (
         <div className="space-y-6">
 
+          {showProfileEdit && (
+            <ProfileEditCard onClose={() => setShowProfileEdit(false)} />
+          )}
+
           <Card className="rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_28px_80px_-55px_rgba(15,23,42,0.3)]">
             <CardContent className="p-6 sm:p-7">
-              <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-                <div className="space-y-3">
-                  <Label htmlFor="directory-search" className="text-sm font-medium text-slate-700">
-                    Search
-                  </Label>
-                  <div className="relative">
-                    <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-                    <Input
-                      id="directory-search"
-                      value={search}
-                      onChange={(event) => setSearch(event.target.value)}
-                      placeholder="Search by name or location"
-                      className="h-12 rounded-2xl border-slate-200 bg-stone-50 pl-11 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:border-sky-300 focus-visible:ring-sky-100"
-                    />
-                  </div>
+              <div className="space-y-4">
+                <div className="relative">
+                  <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    id="directory-search"
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Search by name or location..."
+                    className="h-12 rounded-2xl border-slate-200 bg-stone-50 pl-11 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:border-sky-300 focus-visible:ring-sky-100"
+                  />
                 </div>
 
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium text-slate-700">Category</p>
-                    <div className="flex flex-wrap gap-2">
-                      {['All categories', ...categories.map((c) => c.name)].map((category) => {
-                        const active = category === activeCategory;
-
-                        return (
-                          <Button
-                            key={category}
-                            type="button"
-                            variant="outline"
-                            onClick={() => setActiveCategory(category)}
-                            className={`h-10 rounded-full px-4 text-sm font-semibold ${
-                              active
-                                ? 'border-slate-950 bg-slate-950 text-white hover:bg-slate-900'
-                                : 'border-slate-200 bg-white text-slate-600 hover:bg-stone-100'
-                            }`}
-                          >
-                            {category}
-                          </Button>
-                        );
-                      })}
-                    </div>
+                <div className="flex flex-wrap gap-3">
+                  <div className="flex gap-1 rounded-2xl border border-slate-200 bg-stone-50 p-1">
+                    {['All categories', ...categories.map((c) => c.name)].map((category) => (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => setActiveCategory(category)}
+                        className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          activeCategory === category
+                            ? 'bg-slate-950 text-white shadow-sm'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        {category}
+                      </button>
+                    ))}
                   </div>
 
-                  <div className="space-y-3">
-                    <p className="text-sm font-medium text-slate-700">Minimum rating</p>
-                    <div className="flex flex-wrap gap-2">
-                      {ratingFilters.map((filter) => {
-                        const active = filter.value === minimumRating;
-
-                        return (
-                          <Button
-                            key={filter.label}
-                            type="button"
-                            variant="outline"
-                            onClick={() => setMinimumRating(filter.value)}
-                            className={`h-10 rounded-full px-4 text-sm font-semibold ${
-                              active
-                                ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100'
-                                : 'border-slate-200 bg-white text-slate-600 hover:bg-stone-100'
-                            }`}
-                          >
-                            {filter.label}
-                          </Button>
-                        );
-                      })}
-                    </div>
+                  <div className="flex gap-1 rounded-2xl border border-slate-200 bg-stone-50 p-1">
+                    {ratingFilters.map((filter) => (
+                      <button
+                        key={filter.label}
+                        type="button"
+                        onClick={() => setMinimumRating(filter.value)}
+                        className={`rounded-xl px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          minimumRating === filter.value
+                            ? 'bg-amber-50 text-amber-700 shadow-sm ring-1 ring-amber-200'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>

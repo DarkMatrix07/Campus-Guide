@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogOut } from 'lucide-react';
+import { LogOut, UserPen } from 'lucide-react';
 import AppLogo from '@/components/AppLogo';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ const DashboardShell = ({
   title,
   description,
   onLogout,
+  onEditProfile,
   headerAction,
   children,
 }) => {
@@ -45,6 +46,19 @@ const DashboardShell = ({
               {roleLabel}
             </Badge>
 
+            {onEditProfile && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onEditProfile}
+                className="h-10 rounded-full border-white/80 bg-white/80 px-3 text-slate-600 shadow-sm hover:bg-white hover:text-slate-950"
+                aria-label="Edit profile"
+              >
+                <UserPen className="size-4" />
+              </Button>
+            )}
+
             <Button
               type="button"
               variant="outline"
@@ -62,12 +76,6 @@ const DashboardShell = ({
       <main className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <Badge
-              variant="outline"
-              className="mb-3 rounded-full border-white/80 bg-white/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500 shadow-sm"
-            >
-              {roleLabel} workspace
-            </Badge>
             <h1 className="text-3xl font-semibold tracking-[-0.05em] text-slate-950 sm:text-4xl">
               {title}
             </h1>

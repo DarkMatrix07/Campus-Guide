@@ -88,7 +88,7 @@ const TopRatedBusinesses = () => {
       role="student"
       roleLabel="Student"
       title="Top rated"
-      description="See the strongest reviewed approved businesses, grouped by category so the best-rated options surface first."
+      description="The highest-rated businesses near campus, ranked by student reviews."
       onLogout={handleLogout}
       headerAction={(
         <Button
@@ -113,7 +113,7 @@ const TopRatedBusinesses = () => {
                 Loading top-rated businesses
               </h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                Aggregating average ratings across approved businesses.
+                Fetching ratings...
               </p>
             </div>
           </CardContent>
@@ -139,15 +139,11 @@ const TopRatedBusinesses = () => {
               <CardContent className="relative p-6 sm:p-7">
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.26),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(186,230,253,0.35),transparent_38%)]" />
                 <div className="relative">
-                  <Badge className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700 ring-1 ring-amber-100">
-                    Feature 6
-                  </Badge>
-                  <h2 className="mt-4 text-2xl font-semibold tracking-[-0.05em] text-slate-950">
+                  <h2 className="text-2xl font-semibold tracking-[-0.05em] text-slate-950">
                     Best-reviewed businesses by category
                   </h2>
                   <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-                    Ratings are aggregated per business and ranked inside each category, so Food, Stationery, and PG
-                    each surface their strongest reviewed listings.
+                    Ranked by average student rating within each category. Only businesses with at least one review appear here.
                   </p>
                   <div className="mt-6 flex flex-wrap gap-3">
                     {featuredBusinesses.slice(0, 3).map((business) => (
@@ -190,7 +186,7 @@ const TopRatedBusinesses = () => {
                     No rated businesses yet
                   </h3>
                   <p className="mt-3 text-sm leading-7 text-slate-600">
-                    Top-rated sections will populate after approved businesses start receiving student reviews.
+                    Once approved businesses get reviews, the top picks will show up here.
                   </p>
                 </div>
               </CardContent>
@@ -212,7 +208,7 @@ const TopRatedBusinesses = () => {
                           {section.category} top rated
                         </h3>
                         <p className="mt-2 text-sm leading-7 text-slate-600">
-                          Highest average ratings among approved businesses in this category.
+                          Top picks based on student reviews.
                         </p>
                       </div>
                       <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-stone-50 px-4 py-2 text-sm font-medium text-slate-600">

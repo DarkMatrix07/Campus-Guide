@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import api from '@/api/axios';
 import DashboardShell from '@/components/DashboardShell';
+import ProfileEditCard from '@/components/ProfileEditCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -81,6 +82,11 @@ const OwnerDashboard = () => {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [categories, setCategories] = useState([]);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [editForm, setEditForm] = useState(initialForm);
+  const [editError, setEditError] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
 
   useEffect(() => {
     api.get('/categories').then((res) => setCategories(res.data.categories || [])).catch(() => {});
@@ -172,13 +178,59 @@ const OwnerDashboard = () => {
     }
   };
 
+  const openEditMode = () => {
+    setEditForm({
+      name: business.name || '',
+      category: business.category || '',
+      directoryCategory: business.directoryCategory || '',
+      location: business.location || '',
+      description: business.description || '',
+      contact: business.contact || '',
+      image: null,
+    });
+    setEditError('');
+    setEditMode(true);
+  };
+
+  const handleEditSubmit = async (event) => {
+    event.preventDefault();
+    setEditError('');
+
+    if (!editForm.directoryCategory) {
+      setEditError('Please select a directory category.');
+      return;
+    }
+
+    setEditSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('name', editForm.name);
+      formData.append('category', editForm.category || editForm.directoryCategory);
+      formData.append('directoryCategory', editForm.directoryCategory);
+      formData.append('location', editForm.location);
+      formData.append('description', editForm.description);
+      formData.append('contact', editForm.contact);
+      if (editForm.image) {
+        formData.append('image', editForm.image);
+      }
+
+      const response = await api.put('/businesses/mine', formData);
+      setBusiness(response.data.business);
+      setEditMode(false);
+    } catch (error) {
+      setEditError(error.response?.data?.message || 'Failed to update business.');
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
   const shellTitle = business
     ? 'Your business'
     : 'Complete your business setup';
 
   const shellDescription = business
-    ? 'Track your listing status, store rating, and public student reviews from one calm owner workspace.'
-    : 'Register your business once to unlock your owner dashboard on future logins.';
+    ? 'Your listing status, store rating, and student reviews — all in one place.'
+    : 'Register your business to get listed in the campus directory.';
 
   const statusContent = business
     ? businessStatusContent[business.status] || businessStatusContent.pending
@@ -196,6 +248,7 @@ const OwnerDashboard = () => {
       title={shellTitle}
       description={shellDescription}
       onLogout={handleLogout}
+      onEditProfile={() => setShowProfileEdit((v) => !v)}
     >
       {loadingBusiness ? (
         <Card className="rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_32px_90px_-60px_rgba(15,23,42,0.4)]">
@@ -205,10 +258,10 @@ const OwnerDashboard = () => {
                 <LoaderCircle className="size-6 animate-spin" />
               </div>
               <h2 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-slate-950">
-                Checking your business workspace
+                Loading your business
               </h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                Loading your registration status and store details.
+                Fetching your listing details...
               </p>
             </div>
           </CardContent>
@@ -228,15 +281,141 @@ const OwnerDashboard = () => {
           </CardContent>
         </Card>
       ) : business ? (
-        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="space-y-6">
+
+          {showProfileEdit && (
+            <ProfileEditCard onClose={() => setShowProfileEdit(false)} />
+          )}
+
+          {editMode ? (
+            <Card className="rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_32px_90px_-60px_rgba(15,23,42,0.4)]">
+              <CardContent className="p-6 sm:p-8">
+                <div className="mb-6 flex items-center justify-between">
+                  <h2 className="text-2xl font-semibold tracking-[-0.04em] text-slate-950">Edit listing</h2>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditMode(false)}
+                    className="h-9 rounded-xl border-slate-200 px-4 text-sm font-semibold text-slate-600"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+
+                {editError && (
+                  <div className="mb-4 rounded-[22px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {editError}
+                  </div>
+                )}
+
+                <form onSubmit={handleEditSubmit} noValidate className="grid gap-5">
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="edit-name" className="text-sm font-medium text-slate-700">Business name</Label>
+                      <Input
+                        id="edit-name"
+                        value={editForm.name}
+                        onChange={(e) => setEditForm((p) => ({ ...p, name: e.target.value }))}
+                        required
+                        className="h-12 rounded-2xl border-slate-200 bg-stone-50 px-4 text-sm focus-visible:border-amber-300 focus-visible:ring-amber-100"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-directory-category" className="text-sm font-medium text-slate-700">Directory category</Label>
+                      <select
+                        id="edit-directory-category"
+                        value={editForm.directoryCategory}
+                        onChange={(e) => setEditForm((p) => ({ ...p, directoryCategory: e.target.value }))}
+                        required
+                        className="h-12 w-full rounded-2xl border border-slate-200 bg-stone-50 px-4 text-sm text-slate-900 focus:border-amber-300 focus:outline-none focus:ring-3 focus:ring-amber-100"
+                      >
+                        <option value="">Select a category</option>
+                        {categories.map((c) => (
+                          <option key={c.id} value={c.name}>{c.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-location" className="text-sm font-medium text-slate-700">Location</Label>
+                      <Input
+                        id="edit-location"
+                        value={editForm.location}
+                        onChange={(e) => setEditForm((p) => ({ ...p, location: e.target.value }))}
+                        required
+                        className="h-12 rounded-2xl border-slate-200 bg-stone-50 px-4 text-sm focus-visible:border-amber-300 focus-visible:ring-amber-100"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-description" className="text-sm font-medium text-slate-700">Description</Label>
+                    <Textarea
+                      id="edit-description"
+                      value={editForm.description}
+                      onChange={(e) => setEditForm((p) => ({ ...p, description: e.target.value }))}
+                      required
+                      className="min-h-32 rounded-[24px] border-slate-200 bg-stone-50 px-4 py-3 text-sm focus-visible:border-amber-300 focus-visible:ring-amber-100"
+                    />
+                  </div>
+
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-contact" className="text-sm font-medium text-slate-700">Contact</Label>
+                      <Input
+                        id="edit-contact"
+                        value={editForm.contact}
+                        onChange={(e) => setEditForm((p) => ({ ...p, contact: e.target.value }))}
+                        required
+                        className="h-12 rounded-2xl border-slate-200 bg-stone-50 px-4 text-sm focus-visible:border-amber-300 focus-visible:ring-amber-100"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-image" className="text-sm font-medium text-slate-700">
+                        New image <span className="font-normal text-slate-400">(optional)</span>
+                      </Label>
+                      <input
+                        id="edit-image"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setEditForm((p) => ({ ...p, image: e.target.files?.[0] || null }))}
+                        className="flex h-12 w-full rounded-2xl border border-slate-200 bg-stone-50 px-4 py-3 text-sm text-slate-900 file:mr-3 file:rounded-full file:border-0 file:bg-white file:px-3 file:py-1 file:text-sm file:font-medium file:text-slate-700 focus-visible:border-amber-300 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-amber-100"
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={editSubmitting}
+                    className="h-12 rounded-2xl bg-slate-950 text-sm font-semibold text-white shadow-lg shadow-slate-950/15 hover:bg-slate-800"
+                  >
+                    {editSubmitting ? 'Saving...' : 'Save changes'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          ) : (
+          <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
           <Card className="overflow-hidden rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_32px_90px_-60px_rgba(15,23,42,0.4)]">
             <CardContent className="p-6 sm:p-8">
               <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr]">
                 <div className="space-y-6">
                   <div className="space-y-4">
-                    <Badge className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700">
-                      Submitted listing
-                    </Badge>
+                    <div className="flex items-center justify-between gap-3">
+                      <Badge className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700">
+                        Submitted listing
+                      </Badge>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={openEditMode}
+                        className="h-8 rounded-xl border-slate-200 px-3 text-xs font-semibold text-slate-600 hover:bg-stone-100"
+                      >
+                        Edit listing
+                      </Button>
+                    </div>
                     <div className="space-y-3">
                       <div className="flex flex-wrap items-center gap-3">
                         <h2 className="text-3xl font-semibold tracking-[-0.05em] text-slate-950">
@@ -247,8 +426,7 @@ const OwnerDashboard = () => {
                         </span>
                       </div>
                       <p className="text-sm leading-7 text-slate-600">
-                        Your setup is complete. This owner view now keeps your registration status, store rating, and
-                        public student reviews in one place.
+                        Your business is registered. Check the status below and read what students are saying.
                       </p>
                     </div>
                   </div>
@@ -303,7 +481,7 @@ const OwnerDashboard = () => {
                           {averageRating.toFixed(1)}
                         </p>
                         <p className="mt-2 text-sm text-slate-300">
-                          {averageRating.toFixed(1)} average rating
+                          out of 5.0
                         </p>
                       </div>
                       <div className="flex size-12 items-center justify-center rounded-2xl bg-white/10 text-amber-300">
@@ -341,15 +519,11 @@ const OwnerDashboard = () => {
                   <MessageSquareText className="size-5" />
                 </div>
                 <div>
-                  <Badge className="rounded-full bg-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700">
-                    Public reviews
-                  </Badge>
-                  <h3 className="mt-4 text-2xl font-semibold tracking-[-0.04em] text-slate-950">
-                    Public reviews
+                  <h3 className="text-2xl font-semibold tracking-[-0.04em] text-slate-950">
+                    Student reviews
                   </h3>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">
-                    Student names stay hidden here. Only the public review text and rating are shown in the owner
-                    workspace.
+                  <p className="mt-2 text-sm leading-7 text-slate-600">
+                    Reviewer names are not shown to business owners.
                   </p>
                 </div>
               </div>
@@ -377,13 +551,15 @@ const OwnerDashboard = () => {
                   <div className="rounded-[26px] border border-dashed border-slate-200 bg-stone-50/70 p-6">
                     <p className="text-sm font-semibold text-slate-950">No public reviews yet</p>
                     <p className="mt-2 text-sm leading-7 text-slate-600">
-                      Public reviews will appear here once students start sharing feedback. Reviewer names stay hidden.
+                      Reviews show up here once students leave feedback on your listing.
                     </p>
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
+        </div>
+          )}
         </div>
       ) : (
         <Card className="overflow-hidden rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_32px_90px_-60px_rgba(15,23,42,0.4)]">
@@ -423,7 +599,7 @@ const OwnerDashboard = () => {
                     </div>
                     <p className="mt-4 text-sm font-semibold text-slate-950">Upload one strong image</p>
                     <p className="mt-2 text-sm leading-7 text-slate-600">
-                      The first image becomes the main storefront photo shown back to you after setup.
+                      This photo appears on your public listing in the directory.
                     </p>
                   </div>
                 </div>
@@ -536,7 +712,7 @@ const OwnerDashboard = () => {
                     <div>
                       <p className="text-sm font-semibold text-slate-950">After submission</p>
                       <p className="mt-1 text-sm leading-6 text-slate-600">
-                        Your business is saved as pending, and this workspace becomes your status and reviews view.
+                        Your listing goes into a pending state until an admin approves it.
                       </p>
                     </div>
                   </div>

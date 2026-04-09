@@ -480,6 +480,57 @@ router.post('/', isAuth, isOwner, uploadBusinessImage, async (req, res) => {
   }
 });
 
+router.put('/mine', isAuth, isOwner, uploadBusinessImage, async (req, res) => {
+  const { name, category, directoryCategory, location, description, contact } = req.body;
+
+  try {
+    const business = await Business.findOne({ owner: req.session.userId });
+
+    if (!business) {
+      await removeFileIfPresent(req.file?.path);
+      return res.status(404).json({ success: false, message: 'Business not found' });
+    }
+
+    if (!name || !category || !directoryCategory || !location || !description || !contact) {
+      await removeFileIfPresent(req.file?.path);
+      return res.status(400).json({ success: false, message: 'All business fields are required' });
+    }
+
+    const fieldLimits = { name: 100, category: 50, location: 200, description: 1000, contact: 100 };
+    for (const [field, max] of Object.entries(fieldLimits)) {
+      if (req.body[field] && req.body[field].length > max) {
+        await removeFileIfPresent(req.file?.path);
+        return res.status(400).json({ success: false, message: `${field} must be under ${max} characters` });
+      }
+    }
+
+    const validCategory = await Category.findOne({ name: directoryCategory });
+    if (!validCategory) {
+      await removeFileIfPresent(req.file?.path);
+      return res.status(400).json({ success: false, message: 'Invalid directory category' });
+    }
+
+    if (req.file) {
+      await removeFileIfPresent(business.imagePath);
+      business.imageUrl = `${process.env.SERVER_BASE_URL}/uploads/businesses/${req.file.filename}`;
+      business.imagePath = req.file.path;
+    }
+
+    business.name = name;
+    business.category = category;
+    business.directoryCategory = directoryCategory;
+    business.location = location;
+    business.description = description;
+    business.contact = contact;
+    await business.save();
+
+    return res.json({ success: true, business: serializeBusinessForOwner(business) });
+  } catch (_error) {
+    await removeFileIfPresent(req.file?.path);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 router.patch('/:id/status', isAuth, isAdmin, express.json(), async (req, res) => {
   const { status } = req.body;
 
