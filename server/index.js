@@ -3,7 +3,7 @@ const { startServer } = require('./bootstrap');
 
 dotenv.config();
 
-const requiredEnvVars = ['MONGO_URI', 'SESSION_SECRET', 'CLIENT_URL', 'SERVER_BASE_URL'];
+const requiredEnvVars = ['MONGO_URI', 'SESSION_SECRET', 'CLIENT_URL'];
 for (const key of requiredEnvVars) {
   if (!process.env[key]) {
     console.error(`Missing required environment variable: ${key}`);
