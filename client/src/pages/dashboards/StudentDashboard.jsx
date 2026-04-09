@@ -7,13 +7,11 @@ import {
   LoaderCircle,
   MapPinned,
   Search,
-  Sparkles,
   Star,
   Trophy,
 } from 'lucide-react';
 import api from '@/api/axios';
 import DashboardShell from '@/components/DashboardShell';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -96,21 +94,13 @@ const StudentDashboard = () => {
     });
   }, [activeCategory, businesses, minimumRating, search]);
 
-  const topRatedCount = useMemo(() => (
-    businesses.filter((business) => Number(business.averageRating || 0) >= 4).length
-  ), [businesses]);
-
-  const categoryCount = useMemo(() => (
-    new Set(businesses.map((business) => business.directoryCategory || business.category)).size
-  ), [businesses]);
-
   return (
     <DashboardShell
       user={user}
       role="student"
       roleLabel="Student"
-      title="Business directory"
-      description="Browse approved campus businesses, narrow the list fast, and open any profile to read public reviews before you visit."
+      title="Campus directory"
+      description="Search and browse local businesses near your campus."
       onLogout={handleLogout}
       headerAction={(
         <Button
@@ -126,29 +116,29 @@ const StudentDashboard = () => {
     >
       {loading ? (
         <Card className="rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_32px_90px_-60px_rgba(15,23,42,0.4)]">
-          <CardContent className="flex min-h-[360px] items-center justify-center p-8">
+          <CardContent className="flex items-center justify-center p-12">
             <div className="text-center">
               <div className="mx-auto flex size-14 items-center justify-center rounded-[22px] bg-sky-50 text-sky-600 ring-1 ring-sky-100">
                 <LoaderCircle className="size-6 animate-spin" />
               </div>
               <h2 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-slate-950">
-                Loading approved businesses
+                Loading businesses
               </h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">
-                Pulling the latest approved listings for the campus directory.
+                Fetching approved listings...
               </p>
             </div>
           </CardContent>
         </Card>
       ) : loadingError ? (
         <Card className="rounded-[32px] border-red-100 bg-white/90 py-0 shadow-[0_32px_90px_-60px_rgba(15,23,42,0.4)]">
-          <CardContent className="flex min-h-[320px] items-center justify-center p-8">
+          <CardContent className="flex items-center justify-center p-12">
             <div className="max-w-lg text-center">
               <div className="mx-auto flex size-14 items-center justify-center rounded-[22px] bg-red-50 text-red-600 ring-1 ring-red-100">
                 <AlertCircle className="size-6" />
               </div>
               <h2 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-slate-950">
-                Directory unavailable
+                Could not load businesses
               </h2>
               <p className="mt-3 text-sm leading-7 text-slate-600">{loadingError}</p>
             </div>
@@ -156,80 +146,13 @@ const StudentDashboard = () => {
         </Card>
       ) : (
         <div className="space-y-6">
-          <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr_0.7fr]">
-            <Card className="overflow-hidden rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_28px_80px_-55px_rgba(15,23,42,0.4)]">
-              <CardContent className="relative p-6 sm:p-7">
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(186,230,253,0.55),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(251,191,36,0.18),transparent_32%)]" />
-                <div className="relative">
-                  <Badge className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-700 ring-1 ring-sky-100">
-                    Discover faster
-                  </Badge>
-                  <h2 className="mt-4 text-2xl font-semibold tracking-[-0.05em] text-slate-950">
-                    Approved businesses around campus
-                  </h2>
-                  <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-                    Filter by category, search by name or location, then jump into the full business profile for
-                    ratings and public reviews.
-                  </p>
-                  <div className="mt-6 flex flex-wrap gap-3">
-                    <Button
-                      type="button"
-                      onClick={() => navigate('/top-rated')}
-                      className="h-11 rounded-2xl bg-slate-950 px-5 text-sm font-semibold text-white shadow-lg shadow-slate-950/15 hover:bg-slate-800"
-                    >
-                      <Sparkles className="size-4" />
-                      Explore top rated
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setSearch('');
-                        setActiveCategory('All categories');
-                        setMinimumRating(0);
-                      }}
-                      className="h-11 rounded-2xl border-slate-200 bg-white/90 px-5 text-sm font-semibold text-slate-700 hover:bg-white"
-                    >
-                      Reset filters
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_28px_80px_-55px_rgba(15,23,42,0.28)]">
-              <CardContent className="p-6">
-                <div className="flex size-12 items-center justify-center rounded-[22px] bg-sky-50 text-sky-600 ring-1 ring-sky-100">
-                  <Compass className="size-5" />
-                </div>
-                <p className="mt-5 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Approved listings</p>
-                <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">{businesses.length}</p>
-                <p className="mt-2 text-sm leading-7 text-slate-600">
-                  Businesses currently visible in the public student directory.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_28px_80px_-55px_rgba(15,23,42,0.28)]">
-              <CardContent className="p-6">
-                <div className="flex size-12 items-center justify-center rounded-[22px] bg-amber-50 text-amber-600 ring-1 ring-amber-100">
-                  <Trophy className="size-5" />
-                </div>
-                <p className="mt-5 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Strongly rated</p>
-                <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">{topRatedCount}</p>
-                <p className="mt-2 text-sm leading-7 text-slate-600">
-                  Listings rated 4.0 or higher across {categoryCount || 0} visible categories.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
 
           <Card className="rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_28px_80px_-55px_rgba(15,23,42,0.3)]">
             <CardContent className="p-6 sm:p-7">
               <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
                 <div className="space-y-3">
                   <Label htmlFor="directory-search" className="text-sm font-medium text-slate-700">
-                    Search businesses
+                    Search
                   </Label>
                   <div className="relative">
                     <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
@@ -300,18 +223,18 @@ const StudentDashboard = () => {
 
           {filteredBusinesses.length === 0 ? (
             <Card className="rounded-[32px] border-white/80 bg-white/90 py-0 shadow-[0_32px_90px_-60px_rgba(15,23,42,0.4)]">
-              <CardContent className="flex min-h-[320px] items-center justify-center p-8">
+              <CardContent className="flex items-center justify-center p-12">
                 <div className="max-w-xl text-center">
                   <div className="mx-auto flex size-14 items-center justify-center rounded-[22px] bg-sky-50 text-sky-600 ring-1 ring-sky-100">
                     <Compass className="size-6" />
                   </div>
                   <h3 className="mt-5 text-2xl font-semibold tracking-[-0.04em] text-slate-950">
-                    {businesses.length === 0 ? 'No approved businesses available yet.' : 'No businesses match these filters.'}
+                    {businesses.length === 0 ? 'No businesses yet' : 'Nothing matches your filters'}
                   </h3>
                   <p className="mt-3 text-sm leading-7 text-slate-600">
                     {businesses.length === 0
-                      ? 'Businesses appear here after admin approval.'
-                      : 'Change the category, rating, or search terms to widen the results.'}
+                      ? 'Businesses show up here once approved by an admin.'
+                      : 'Try a different category, rating, or search term.'}
                   </p>
                 </div>
               </CardContent>
