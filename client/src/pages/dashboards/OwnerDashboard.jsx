@@ -28,6 +28,7 @@ import { useAuth } from '../../context/AuthContext';
 const initialForm = {
   name: '',
   category: '',
+  directoryCategory: '',
   location: '',
   description: '',
   contact: '',
@@ -79,6 +80,11 @@ const OwnerDashboard = () => {
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState(initialForm);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    api.get('/categories').then((res) => setCategories(res.data.categories || [])).catch(() => {});
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -134,6 +140,11 @@ const OwnerDashboard = () => {
     event.preventDefault();
     setFormError('');
 
+    if (!form.directoryCategory) {
+      setFormError('Please select a directory category.');
+      return;
+    }
+
     if (!form.image) {
       setFormError('Please upload a storefront image before submitting.');
       return;
@@ -144,7 +155,8 @@ const OwnerDashboard = () => {
     try {
       const formData = new FormData();
       formData.append('name', form.name);
-      formData.append('category', form.category);
+      formData.append('category', form.category || form.directoryCategory);
+      formData.append('directoryCategory', form.directoryCategory);
       formData.append('location', form.location);
       formData.append('description', form.description);
       formData.append('contact', form.contact);
@@ -440,17 +452,21 @@ const OwnerDashboard = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="business-category" className="text-sm font-medium text-slate-700">
-                      Category
+                    <Label htmlFor="business-directory-category" className="text-sm font-medium text-slate-700">
+                      Directory category
                     </Label>
-                    <Input
-                      id="business-category"
-                      value={form.category}
-                      onChange={(event) => updateField('category', event.target.value)}
-                      placeholder="Cafe"
+                    <select
+                      id="business-directory-category"
+                      value={form.directoryCategory}
+                      onChange={(event) => updateField('directoryCategory', event.target.value)}
                       required
-                      className="h-12 rounded-2xl border-slate-200 bg-stone-50 px-4 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:border-amber-300 focus-visible:ring-amber-100"
-                    />
+                      className="h-12 w-full rounded-2xl border border-slate-200 bg-stone-50 px-4 text-sm text-slate-900 focus:border-amber-300 focus:outline-none focus:ring-3 focus:ring-amber-100"
+                    >
+                      <option value="">Select a category</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.name}>{c.name}</option>
+                      ))}
+                    </select>
                   </div>
 
                   <div className="space-y-2">

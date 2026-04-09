@@ -12,13 +12,13 @@ import {
 } from 'lucide-react';
 import api from '@/api/axios';
 import DashboardShell from '@/components/DashboardShell';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '../../context/AuthContext';
 
-const categoryFilters = ['All categories', 'Food', 'Stationery', 'PG'];
 const ratingFilters = [
   { label: 'All ratings', value: 0 },
   { label: '4.5+', value: 4.5 },
@@ -30,6 +30,7 @@ const StudentDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [businesses, setBusinesses] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingError, setLoadingError] = useState('');
   const [search, setSearch] = useState('');
@@ -39,15 +40,19 @@ const StudentDashboard = () => {
   useEffect(() => {
     let active = true;
 
-    const loadBusinesses = async () => {
+    const loadData = async () => {
       try {
-        const response = await api.get('/businesses/public');
+        const [businessesRes, categoriesRes] = await Promise.all([
+          api.get('/businesses/public'),
+          api.get('/categories'),
+        ]);
 
         if (!active) {
           return;
         }
 
-        setBusinesses(response.data.businesses || []);
+        setBusinesses(businessesRes.data.businesses || []);
+        setCategories(categoriesRes.data.categories || []);
         setLoadingError('');
       } catch (error) {
         if (!active) {
@@ -62,7 +67,7 @@ const StudentDashboard = () => {
       }
     };
 
-    loadBusinesses();
+    loadData();
 
     return () => {
       active = false;
@@ -170,7 +175,7 @@ const StudentDashboard = () => {
                   <div className="space-y-3">
                     <p className="text-sm font-medium text-slate-700">Category</p>
                     <div className="flex flex-wrap gap-2">
-                      {categoryFilters.map((category) => {
+                      {['All categories', ...categories.map((c) => c.name)].map((category) => {
                         const active = category === activeCategory;
 
                         return (

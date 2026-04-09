@@ -31,6 +31,10 @@ const reviewSchema = new mongoose.Schema({
     }],
     default: [],
   },
+  hidden: {
+    type: Boolean,
+    default: false,
+  },
 }, { timestamps: true });
 
 const businessSchema = new mongoose.Schema({
@@ -76,10 +80,18 @@ const businessSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  directoryCategory: {
+    type: String,
+    trim: true,
+  },
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending',
+  },
+  hidden: {
+    type: Boolean,
+    default: false,
   },
   reviews: {
     type: [reviewSchema],

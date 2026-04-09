@@ -4,13 +4,13 @@ const path = require('node:path');
 const express = require('express');
 const multer = require('multer');
 const Business = require('../models/Business');
+const Category = require('../models/Category');
 const { isAuth, isAdmin, isOwner, isStudent } = require('../middleware/auth');
 
 const router = express.Router();
 
 const uploadRoot = process.env.UPLOAD_ROOT || path.join(__dirname, '..', 'uploads');
 const businessImageDir = path.join(uploadRoot, 'businesses');
-const DEFAULT_DIRECTORY_CATEGORIES = ['Food', 'Stationery', 'PG'];
 const ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
 
 const ensureUploadDir = () => {
@@ -202,13 +202,14 @@ const buildSerializedBusinessBase = (business) => {
     id: getEntityId(business),
     name: business?.name || '',
     category: business?.category || '',
-    directoryCategory: inferDirectoryCategory(business?.category),
+    directoryCategory: business?.directoryCategory || inferDirectoryCategory(business?.category),
     location: business?.location || '',
     description: business?.description || '',
     contact: business?.contact || '',
     imageUrl: business?.imageUrl || '',
     images: getBusinessImages(business),
     status: business?.status || 'pending',
+    hidden: Boolean(business?.hidden),
     averageRating,
     reviewCount,
     createdAt: business?.createdAt || null,
@@ -216,13 +217,19 @@ const buildSerializedBusinessBase = (business) => {
   };
 };
 
+const serializeReviewForAdmin = (review) => ({
+  ...serializeReview(review, null),
+  hidden: Boolean(review?.hidden),
+});
+
 const serializeBusinessForOwner = (business) => ({
   ...buildSerializedBusinessBase(business),
   reviews: asArray(business?.reviews).map((review) => serializeReview(review, null)),
 });
 
 const serializeBusinessForAdmin = (business) => ({
-  ...serializeBusinessForOwner(business),
+  ...buildSerializedBusinessBase(business),
+  reviews: asArray(business?.reviews).map(serializeReviewForAdmin),
   owner: business?.owner ? {
     id: getEntityId(business.owner),
     name: business.owner.name,
@@ -231,7 +238,7 @@ const serializeBusinessForAdmin = (business) => ({
 });
 
 const serializeBusinessForPublic = (business, viewerId) => {
-  const reviews = asArray(business?.reviews);
+  const reviews = asArray(business?.reviews).filter((review) => !review?.hidden);
   const matchingReview = viewerId == null
     ? null
     : reviews.find((review) => idsEqual(review?.reviewer, viewerId));
@@ -312,7 +319,7 @@ const toggleReactionMembership = (ids, targetId, shouldInclude) => {
 router.get('/public', async (req, res) => {
   try {
     const viewerId = req.session?.userId || null;
-    const businesses = await Business.find({ status: 'approved' });
+    const businesses = await Business.find({ status: 'approved', hidden: { $ne: true } });
     const serializedBusinesses = businesses.map((business) => serializeBusinessForPublic(business, viewerId));
     const filteredBusinesses = filterDirectoryBusinesses(serializedBusinesses, req.query)
       .sort(compareDirectoryBusinesses);
@@ -330,7 +337,7 @@ router.get('/public/:id', async (req, res) => {
   try {
     const business = await Business.findById(req.params.id);
 
-    if (!business || business.status !== 'approved') {
+    if (!business || business.status !== 'approved' || business.hidden) {
       return res.status(404).json({ success: false, message: 'Business not found' });
     }
 
@@ -348,21 +355,27 @@ router.get('/public/:id', async (req, res) => {
 router.get('/top-rated', async (req, res) => {
   try {
     const viewerId = req.session?.userId || null;
-    const approvedBusinesses = await Business.find({ status: 'approved' });
+    const [approvedBusinesses, dbCategories] = await Promise.all([
+      Business.find({ status: 'approved', hidden: { $ne: true } }),
+      Category.find().sort({ name: 1 }),
+    ]);
     const ratedBusinesses = approvedBusinesses
       .map((business) => serializeBusinessForPublic(business, viewerId))
       .filter((business) => business.reviewCount > 0);
+    const knownCategoryNames = dbCategories.map((c) => c.name);
     const sectionCategories = Array.from(new Set([
-      ...DEFAULT_DIRECTORY_CATEGORIES,
+      ...knownCategoryNames,
       ...ratedBusinesses.map((business) => business.directoryCategory),
     ]));
-    const sections = sectionCategories.map((category) => ({
-      category,
-      businesses: ratedBusinesses
-        .filter((business) => business.directoryCategory === category)
-        .sort(compareDirectoryBusinesses)
-        .slice(0, 3),
-    }));
+    const sections = sectionCategories
+      .map((category) => ({
+        category,
+        businesses: ratedBusinesses
+          .filter((business) => business.directoryCategory === category)
+          .sort(compareDirectoryBusinesses)
+          .slice(0, 3),
+      }))
+      .filter((section) => section.businesses.length > 0);
 
     res.json({
       success: true,
@@ -407,6 +420,7 @@ router.post('/', isAuth, isOwner, uploadBusinessImage, async (req, res) => {
   const {
     name,
     category,
+    directoryCategory,
     location,
     description,
     contact,
@@ -420,7 +434,7 @@ router.post('/', isAuth, isOwner, uploadBusinessImage, async (req, res) => {
       return res.status(409).json({ success: false, message: 'Business already registered' });
     }
 
-    if (!name || !category || !location || !description || !contact) {
+    if (!name || !category || !directoryCategory || !location || !description || !contact) {
       await removeFileIfPresent(req.file?.path);
       return res.status(400).json({ success: false, message: 'All business fields are required' });
     }
@@ -433,6 +447,12 @@ router.post('/', isAuth, isOwner, uploadBusinessImage, async (req, res) => {
       }
     }
 
+    const validCategory = await Category.findOne({ name: directoryCategory });
+    if (!validCategory) {
+      await removeFileIfPresent(req.file?.path);
+      return res.status(400).json({ success: false, message: 'Invalid directory category' });
+    }
+
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'Business image is required' });
     }
@@ -441,6 +461,7 @@ router.post('/', isAuth, isOwner, uploadBusinessImage, async (req, res) => {
       owner: req.session.userId,
       name,
       category,
+      directoryCategory,
       location,
       description,
       contact,
@@ -526,6 +547,130 @@ router.post('/:id/reviews', isAuth, isStudent, express.json(), async (req, res) 
       success: true,
       business: serializeBusinessForPublic(business, req.session.userId),
     });
+  } catch (_error) {
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.get('/admin/all', isAuth, isAdmin, async (_req, res) => {
+  try {
+    const businesses = await Business.find().populate('owner', 'name email').sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      businesses: businesses.map(serializeBusinessForAdmin),
+    });
+  } catch (_error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.get('/admin/reviews', isAuth, isAdmin, async (_req, res) => {
+  try {
+    const businesses = await Business.find().populate('owner', 'name email').sort({ createdAt: -1 });
+    const reviews = [];
+
+    for (const business of businesses) {
+      for (const review of asArray(business.reviews)) {
+        reviews.push({
+          reviewId: getEntityId(review),
+          businessId: getEntityId(business),
+          businessName: business.name || '',
+          authorId: getEntityId(review.reviewer),
+          rating: Number(review.rating) || 0,
+          comment: review.comment || '',
+          hidden: Boolean(review.hidden),
+          createdAt: review.createdAt || null,
+        });
+      }
+    }
+
+    reviews.sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
+    });
+
+    res.json({ success: true, reviews });
+  } catch (_error) {
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.patch('/:id/hide', isAuth, isAdmin, async (req, res) => {
+  try {
+    const business = await Business.findById(req.params.id);
+
+    if (!business) {
+      return res.status(404).json({ success: false, message: 'Business not found' });
+    }
+
+    business.hidden = !business.hidden;
+    await business.save();
+
+    return res.json({ success: true, hidden: business.hidden });
+  } catch (_error) {
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.delete('/:id', isAuth, isAdmin, async (req, res) => {
+  try {
+    const business = await Business.findById(req.params.id);
+
+    if (!business) {
+      return res.status(404).json({ success: false, message: 'Business not found' });
+    }
+
+    await removeFileIfPresent(business.imagePath);
+    await Business.findByIdAndDelete(req.params.id);
+
+    return res.json({ success: true });
+  } catch (_error) {
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.patch('/:id/reviews/:reviewId/hide', isAuth, isAdmin, async (req, res) => {
+  try {
+    const business = await Business.findById(req.params.id);
+
+    if (!business) {
+      return res.status(404).json({ success: false, message: 'Business not found' });
+    }
+
+    const review = findReviewById(business, req.params.reviewId);
+
+    if (!review) {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+
+    review.hidden = !review.hidden;
+    await business.save();
+
+    return res.json({ success: true, hidden: review.hidden });
+  } catch (_error) {
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+router.delete('/:id/reviews/:reviewId', isAuth, isAdmin, async (req, res) => {
+  try {
+    const business = await Business.findById(req.params.id);
+
+    if (!business) {
+      return res.status(404).json({ success: false, message: 'Business not found' });
+    }
+
+    const reviewIndex = asArray(business.reviews).findIndex((r) => idsEqual(r, req.params.reviewId));
+
+    if (reviewIndex === -1) {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+
+    business.reviews.splice(reviewIndex, 1);
+    await business.save();
+
+    return res.json({ success: true });
   } catch (_error) {
     return res.status(500).json({ success: false, message: 'Server error' });
   }

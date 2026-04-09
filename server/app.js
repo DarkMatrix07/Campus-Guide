@@ -40,6 +40,8 @@ app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/businesses', require('./routes/businesses'));
+app.use('/api/categories', require('./routes/categories'));
+app.use('/api/admin', require('./routes/admin'));
 
 app.get('/', (req, res) => res.send('Campus Guide API running'));
 

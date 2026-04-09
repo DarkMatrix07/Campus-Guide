@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const User = require('./models/User');
+const Category = require('./models/Category');
 
 dotenv.config();
 
@@ -15,6 +16,8 @@ const users = [
   { name: 'Admin', email: 'admin@campus.com', password: 'admin1234', role: 'admin' },
 ];
 
+const defaultCategories = ['Food', 'Stationery', 'PG'];
+
 const seed = async () => {
   await mongoose.connect(process.env.MONGO_URI);
   await User.deleteMany({});
@@ -22,6 +25,17 @@ const seed = async () => {
     await User.create(u);
   }
   console.log('Users seeded successfully');
+
+  const categoryCount = await Category.countDocuments();
+  if (categoryCount === 0) {
+    for (const name of defaultCategories) {
+      await Category.create({ name });
+    }
+    console.log('Default categories seeded');
+  } else {
+    console.log('Categories already exist, skipping seed');
+  }
+
   process.exit(0);
 };
 
